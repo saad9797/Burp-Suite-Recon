@@ -1,0 +1,1032 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Traceglass • Browser observatory</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="recon.css" />
+    <link rel="stylesheet" href="handoff.css" />
+    <script src="/bootstrap.js"></script>
+    <script defer src="app.js"></script>
+    <script defer src="workbench.js"></script>
+    <script defer src="recon.js"></script>
+    <script defer src="handoff.js"></script>
+    <script defer src="handoff-auth.js"></script>
+    <script defer src="handoff-progress.js"></script>
+  </head>
+  <body>
+    <aside>
+      <a class="brand" href="/"
+        >◈ <span>traceglass<small>BROWSER OBSERVATORY</small></span></a
+      >
+      <div class="workspace">LOCAL WORKSPACE <span>● PRIVATE</span></div>
+      <button id="newCapture" class="primary">＋ New capture</button>
+      <div class="label">CAPTURE SESSIONS</div>
+      <div id="sessions"></div>
+      <footer>
+        <span class="dot"></span> Stored on this device<br /><small
+          >Browser traffic can contain credentials.<br />Keep your exports
+          private.</small
+        >
+      </footer>
+    </aside>
+    <main>
+      <header>
+        <div>
+          <div class="eyebrow">WORKSPACE / CAPTURE</div>
+          <h1 id="title">Your browser, in detail.</h1>
+          <p id="subtitle">Start a capture to see every request unfold.</p>
+        </div>
+        <div class="controls">
+          <span id="live" class="badge">IDLE</span
+          ><button id="resume" hidden>Reopen session</button
+          ><button id="pause" disabled>Pause capture</button
+          ><button id="stop" disabled>Close browser</button>
+        </div>
+      </header>
+      <section class="stats">
+        <div>
+          <small>CAPTURED REQUESTS</small><strong id="totalCount">0</strong>
+        </div>
+        <div>
+          <small>VISIBLE RESULTS</small><strong id="visibleCount">0</strong>
+        </div>
+        <div>
+          <small>JAVASCRIPT FILES</small><strong id="jsCount">0</strong>
+        </div>
+        <div>
+          <small>CAPTURE ENGINE</small
+          ><strong class="engine">Chromium <span>↗</span></strong>
+        </div>
+      </section>
+      <nav>
+        <button class="active" data-tab="traffic">↔ HTTP history</button
+        ><button data-tab="scripts">⌘ JavaScript library</button
+        ><button data-tab="tech">◈ Technologies</button>
+        <button data-tab="intercept">
+          ⏸ Intercept <span id="queueCount" class="badge">0</span>
+        </button>
+        <button data-tab="repeater">↻ Repeater</button>
+        <button data-tab="recon">◎ Recon</button>
+        <button data-tab="handoff">▣ Handoff Package</button>
+      </nav>
+      <section id="captureView">
+        <div class="toolbar">
+          <div class="search">
+            <span>⌕</span
+            ><input
+              id="search"
+              placeholder="Search URLs, headers, request & response bodies…"
+              aria-label="Search captures"
+            /><kbd>/</kbd>
+          </div>
+          <select id="method" aria-label="HTTP method">
+            <option value="">All methods</option>
+            <option>GET</option>
+            <option>POST</option>
+            <option>PUT</option>
+            <option>PATCH</option>
+            <option>DELETE</option>
+            <option>OPTIONS</option>
+            <option>HEAD</option>
+            <option>CONNECT</option>
+            <option>TRACE</option></select
+          ><input
+            id="host"
+            placeholder="URL contains…"
+            aria-label="URL filter"
+          /><input
+            id="status"
+            type="number"
+            placeholder="Status"
+            aria-label="Status code"
+          /><button id="reset">Reset</button>
+        </div>
+        <div class="tableHeading">
+          <span id="resultLabel">HTTP HISTORY</span>
+          <div>
+            <select id="exportFormat" aria-label="Export format">
+              <option value="har">HAR with bodies</option>
+              <option value="json">Full JSON</option>
+              <option value="zip">JavaScript ZIP</option></select
+            ><button id="exportFiltered">↓ Export filtered</button
+            ><button id="exportAll">Export all</button>
+          </div>
+        </div>
+        <div class="tableWrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Method</th>
+                <th>Status</th>
+                <th>Request URL</th>
+                <th>Type</th>
+                <th>Size</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody id="traffic"></tbody>
+          </table>
+          <div id="empty" class="empty">
+            <div>◎</div>
+            <h2>Every action leaves a trace.</h2>
+            <p>
+              Open a capture browser and explore your app.<br />Requests,
+              responses, and JavaScript appear here live.
+            </p>
+            <button id="emptyStart" class="primary">
+              Start your first capture ↗
+            </button>
+          </div>
+        </div>
+        <div class="pagination">
+          <span id="pageInfo"></span>
+          <div>
+            <button id="prev">← Previous</button
+            ><button id="next">Next →</button>
+          </div>
+        </div>
+      </section>
+      <section id="techView" hidden>
+        <div class="techHeader">
+          <div>
+            <h2>Technology fingerprints</h2>
+            <p>
+              Passive Wappalyzer results from captured pages and scripts. Run
+              httpx for an additional active probe.
+            </p>
+          </div>
+          <button id="probe" class="primary">Run httpx -tech-detect ↗</button>
+        </div>
+        <div id="technologies"></div>
+      </section>
+      <section id="interceptView" hidden>
+        <div class="workbenchHeader">
+          <div>
+            <h2>Stop. Inspect. Forward.</h2>
+            <p>
+              Hold outgoing requests before they reach the server. Turning
+              interception off forwards every queued request unchanged.
+            </p>
+          </div>
+          <button id="interceptToggle" class="primary">
+            Interception is off
+          </button>
+        </div>
+        <div class="interceptRules">
+          <label
+            >HTTP method<select id="interceptMethod">
+              <option value="">All methods</option>
+              <option>GET</option>
+              <option>POST</option>
+              <option>PUT</option>
+              <option>PATCH</option>
+              <option>DELETE</option>
+              <option>OPTIONS</option>
+            </select></label
+          ><label
+            >URL contains<input
+              id="interceptUrl"
+              placeholder="Optional scope, e.g. /api/checkout" /></label
+          ><button id="applyInterceptRules">Apply scope</button
+          ><span id="interceptState" role="status"
+            >Open a capture browser to intercept traffic.</span
+          >
+        </div>
+        <p class="workbenchNote">
+          Interception applies to the active capture browser, even if another
+          session is selected. Capture pause only pauses logging.
+          Browser-managed Cookie and Host headers can be edited in Repeater.
+          Unsaved queue edits are discarded when you turn interception off.
+        </p>
+        <div class="workbenchSplit">
+          <div class="workbenchList">
+            <div class="listHeading">HELD REQUESTS</div>
+            <div class="groupControls">
+              <input
+                id="captureGroupName"
+                placeholder="New group name"
+                aria-label="New intercept group name"
+              />
+              <button id="captureGroupCreate">Create group</button>
+              <select
+                id="captureGroup"
+                aria-label="Collect intercepted requests into group"
+              ></select>
+              <button id="captureGroupAdd">Add held request to group</button>
+              <button id="captureGroupSend">
+                Send whole group to Repeater
+              </button>
+              <p id="captureGroupCount" class="workbenchNote"></p>
+            </div>
+            <div id="interceptQueue"></div>
+          </div>
+          <div class="workbenchEditor">
+            <div id="interceptEmpty" class="empty">
+              <h2>Let the next request come to you.</h2>
+              <p>
+                Enable interception, then perform an action in the capture
+                browser.
+              </p>
+            </div>
+            <div id="interceptEditor" hidden>
+              <div class="editorTop">
+                <strong id="heldLabel">Held request</strong>
+                <div>
+                  <button id="heldRepeater">Send to Repeater</button
+                  ><button id="heldDrop" class="danger">Drop</button
+                  ><button id="heldForward" class="primary">
+                    Forward request →
+                  </button>
+                </div>
+              </div>
+              <div class="requestLine">
+                <input
+                  id="heldMethod"
+                  aria-label="Intercepted method"
+                  value="GET"
+                /><input id="heldUrl" aria-label="Intercepted URL" />
+              </div>
+              <label
+                >Request headers <small>One header per line: Name: value</small
+                ><textarea
+                  id="heldHeaders"
+                  spellcheck="false"
+                  rows="10"
+                ></textarea>
+              </label>
+              <label
+                >Request body
+                <select id="heldEncoding">
+                  <option value="utf8">UTF-8 text</option>
+                  <option value="base64">Base64 bytes</option></select
+                ><textarea id="heldBody" spellcheck="false" rows="9"></textarea>
+              </label>
+              <p id="heldError" class="error" role="alert"></p>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section id="repeaterView" hidden>
+        <div class="workbenchHeader">
+          <div>
+            <h2>A request. Another possibility.</h2>
+            <p>
+              Edit and resend independently of browser interception. Each send
+              is saved in this session’s repeater history.
+            </p>
+          </div>
+          <button id="repeaterNew">＋ Blank request</button>
+        </div>
+        <div class="repeaterLayout">
+          <div class="workbenchList">
+            <div class="listHeading">SEND HISTORY</div>
+            <div id="repeaterHistory"></div>
+          </div>
+          <div class="repeatMain">
+            <div class="groupControls repeaterWorkspace">
+              <div
+                id="repeatTabs"
+                role="tablist"
+                aria-label="Open repeater requests"
+              ></div>
+              <div class="workspaceActions">
+                <input
+                  id="repeatGroupName"
+                  placeholder="New group name"
+                  aria-label="New repeater group name"
+                />
+                <button id="repeatGroupCreate">Create group</button>
+                <select id="repeatGroup" aria-label="Request group"></select>
+                <button id="repeatCopy">Copy request context</button>
+                <button id="repeatGroupCopy">Copy whole group context</button>
+              </div>
+            </div>
+            <div class="editorTop">
+              <input
+                id="repeatName"
+                placeholder="Request name"
+                aria-label="Repeater request name"
+              />
+              <div>
+                <button id="repeatCancel" hidden>Cancel</button
+                ><button id="repeatSend" class="primary">Send request →</button>
+              </div>
+            </div>
+            <div class="requestLine">
+              <input
+                id="repeatMethod"
+                aria-label="Repeater method"
+                value="GET"
+              /><input
+                id="repeatUrl"
+                aria-label="Repeater URL"
+                placeholder="https://example.com/api"
+              />
+            </div>
+            <div class="repeatOptions">
+              <label
+                >Timeout
+                <select id="repeatTimeout">
+                  <option value="30000">30 seconds</option>
+                  <option value="60000">60 seconds</option>
+                  <option value="120000">120 seconds</option>
+                </select></label
+              ><label class="checkbox"
+                ><input id="repeatTLS" type="checkbox" checked /> Verify TLS
+                certificate</label
+              ><span
+                >Redirects are shown without following them. Cookies come from
+                your headers.</span
+              >
+            </div>
+            <div class="repeatColumns">
+              <div>
+                <h3>Request</h3>
+                <label
+                  >Headers <small>Name: value, one per line</small
+                  ><textarea
+                    id="repeatHeaders"
+                    rows="11"
+                    spellcheck="false"
+                  ></textarea></label
+                ><label
+                  >Body
+                  <select id="repeatEncoding">
+                    <option value="utf8">UTF-8 text</option>
+                    <option value="base64">Base64 bytes</option></select
+                  ><textarea
+                    id="repeatBody"
+                    rows="11"
+                    spellcheck="false"
+                  ></textarea>
+                </label>
+                <p id="repeatError" class="error" role="alert"></p>
+              </div>
+              <div class="responsePane">
+                <h3>
+                  Response
+                  <span id="repeatSummary" class="badge">NOT SENT</span>
+                </h3>
+                <div class="responseTools">
+                  <select id="repeatDisplay" aria-label="Response display">
+                    <option value="body">Body</option>
+                    <option value="pretty">Pretty JSON</option>
+                    <option value="headers">Headers</option>
+                    <option value="compare">
+                      Compare with previous
+                    </option></select
+                  ><input
+                    id="repeatFind"
+                    placeholder="Find in response"
+                    aria-label="Find in repeater response"
+                  /><button id="repeatDownload" disabled>↓ Body</button>
+                </div>
+                <p id="repeatComparison" class="workbenchNote"></p>
+                <pre id="repeatResponse">
+Send a request to inspect its response here.</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section id="reconView" hidden>
+        <div class="workbenchHeader">
+          <div>
+            <h2>Collect the whole picture.</h2>
+            <p>
+              Keyless recon, browser evidence, and source imports in one
+              searchable evidence library.
+            </p>
+          </div>
+          <div>
+            <button id="reconHarOpen">Import HAR</button>
+            <button id="reconSourceOpen">Import source</button>
+            <button id="reconNew" class="primary">＋ New recon run</button>
+          </div>
+        </div>
+        <div class="reconRunBar">
+          <label
+            >RUN<select id="reconRuns" aria-label="Recon run"></select></label
+          ><span id="reconRunStatus" class="badge">NO RUNS</span
+          ><button id="reconCancel" hidden>Stop collection</button
+          ><button id="reconRoles">Compare account roles</button
+          ><span id="reconRequests"></span>
+        </div>
+        <div id="reconStages" class="reconStages"></div>
+        <div class="reconLayout">
+          <div class="workbenchList">
+            <div class="listHeading">EVIDENCE CATEGORIES</div>
+            <div id="reconCategories"></div>
+          </div>
+          <div class="reconResults">
+            <div class="toolbar">
+              <div class="search">
+                <span>⌕</span
+                ><input
+                  id="reconSearch"
+                  placeholder="Search evidence, headers, source, and JavaScript…"
+                  aria-label="Search recon evidence"
+                />
+              </div>
+              <select id="reconExportFormat" aria-label="Recon export format">
+                <option value="zip">ZIP + artifacts</option>
+                <option value="json">JSON evidence</option>
+                <option value="txt">URL list</option></select
+              ><button id="reconExportFiltered">Export filtered</button
+              ><button id="reconExportAll">Export all</button>
+            </div>
+            <div class="tableWrap reconTable">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Category</th>
+                    <th>Evidence</th>
+                    <th>Source</th>
+                  </tr>
+                </thead>
+                <tbody id="reconRecords"></tbody>
+              </table>
+              <div id="reconEmpty" class="empty">
+                <h2>Build your target’s evidence library.</h2>
+                <p>
+                  Start a run or import authorized source files and captured
+                  traffic.<br />Missing results mean “not observed,” not “does
+                  not exist.”
+                </p>
+              </div>
+            </div>
+            <div class="pagination">
+              <span id="reconPageInfo"></span>
+              <div>
+                <button id="reconPrev">← Previous</button
+                ><button id="reconNext">Next →</button>
+              </div>
+            </div>
+            <details class="reconLog">
+              <summary>Collection log & coverage notes</summary>
+              <pre id="reconLog"></pre>
+            </details>
+          </div>
+        </div>
+      </section>
+      <section id="handoffView" hidden>
+        <div id="handoffBuildStatus" class="handoffBuildStatus" hidden>
+          <div>
+            <strong id="handoffBuildStatusText">Building handoff…</strong
+            ><small id="handoffBuildStatusFile"></small
+            ><progress id="handoffBuildBar"></progress>
+          </div>
+          <button id="handoffBuildCancel" class="danger">Cancel build</button>
+        </div>
+        <div class="workbenchHeader">
+          <div>
+            <h2>One package. A clear next step.</h2>
+            <p>
+              Consolidated evidence, stable diffs, and your manual authorization
+              review.
+            </p>
+          </div>
+          <button id="handoffBuildOpen" class="primary">
+            ＋ Build handoff package
+          </button>
+        </div>
+        <div class="reconRunBar">
+          <label
+            >PACKAGE<select
+              id="handoffPackages"
+              aria-label="Handoff package"
+            ></select></label
+          ><button id="handoffDownload" disabled>↓ Download complete ZIP</button
+          ><button id="handoffCopy" disabled>Copy summary.md</button>
+        </div>
+        <p id="handoffInfo" class="workbenchNote"></p>
+        <div id="handoffMetrics" class="reconStages"></div>
+        <div class="handoffTabs">
+          <button data-handoff-view="summary" class="active">
+            Read first · summary.md</button
+          ><button data-handoff-view="diff">Changes since baseline</button
+          ><button data-handoff-view="assets">Hosts</button
+          ><button data-handoff-view="endpoints">Endpoints &amp; params</button
+          ><button data-handoff-view="js_findings">JavaScript findings</button
+          ><button data-handoff-view="auth_map">Manual auth checklist</button>
+        </div>
+        <div id="handoffEmpty" class="empty">
+          <h2>Turn collected evidence into a handoff.</h2>
+          <p>
+            Select a finished run and optionally add source or role-labeled
+            runs.
+          </p>
+        </div>
+        <div id="handoffReadView" hidden>
+          <div class="editorTop">
+            <span id="handoffFilename">summary.md</span
+            ><button id="handoffDownloadText">Download this file</button>
+          </div>
+          <pre id="handoffPreview"></pre>
+        </div>
+        <div id="handoffInventoryView" hidden>
+          <div class="toolbar">
+            <div class="search">
+              <span>⌕</span
+              ><input
+                id="handoffSearch"
+                placeholder="Search consolidated inventory…"
+                aria-label="Search handoff inventory"
+              />
+            </div>
+            <button id="handoffInventoryDownload">Download JSON</button>
+          </div>
+          <div class="tableWrap handoffTable">
+            <table>
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Details</th>
+                  <th>Review</th>
+                </tr>
+              </thead>
+              <tbody id="handoffRows"></tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <span id="handoffPageInfo"></span>
+            <div>
+              <button id="handoffPrev">← Previous</button
+              ><button id="handoffNext">Next →</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <dialog id="handoffBuildDialog" class="wideDialog">
+      <form id="handoffBuildForm">
+        <div class="eyebrow">CONSOLIDATED RECON HANDOFF</div>
+        <h2>Choose this scan’s evidence.</h2>
+        <label
+          >Processing profile<select id="handoffProfile">
+            <option value="balanced">
+              Balanced · 2 MiB/file AST · 30s JS budget
+            </option>
+            <option value="quick">
+              Quick · 512 KiB/file AST · 15s JS budget
+            </option>
+            <option value="inventory">
+              Inventory + cached findings · no new JS parsing
+            </option>
+          </select></label
+        >
+        <label
+          >Primary finished recon run<select
+            id="handoffPrimary"
+            required
+          ></select></label
+        ><label
+          >Package name<input
+            id="handoffName"
+            maxlength="150"
+            placeholder="Target · review date" /></label
+        ><label
+          >Baseline<select id="handoffBaseline">
+            <option value="auto">
+              Latest package with matching target scope
+            </option>
+            <option value="none">No baseline</option>
+          </select></label
+        >
+        <details open>
+          <summary>Additional evidence runs</summary>
+          <p class="workbenchNote">
+            Add source imports or role-labeled captures from this scan.
+            Including every historical scan would hide assets that are no longer
+            observed. Selected runs must share the target origin, subdomain
+            scope, and exclusions.
+          </p>
+          <div id="handoffRunChoices" class="moduleGrid"></div>
+        </details>
+        <p class="workbenchNote">
+          Local AST and pattern analysis needs no AI key. Secrets and object-ID
+          parameters remain unverified candidates.
+        </p>
+        <p id="handoffBuildError" class="error"></p>
+        <div class="dialogButtons">
+          <button type="button" data-close="handoffBuildDialog">Cancel</button
+          ><button id="handoffBuild" class="primary">Build package →</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="handoffDetailDialog" class="wideDialog">
+      <div class="editorTop">
+        <strong>Consolidated evidence</strong
+        ><button id="handoffOriginal" hidden>Download original file</button
+        ><button data-close="handoffDetailDialog">Close</button>
+      </div>
+      <pre id="handoffDetail"></pre>
+    </dialog>
+    <dialog id="handoffAuthDialog" class="wideDialog">
+      <form id="handoffAuthForm">
+        <div class="editorTop">
+          <div>
+            <div class="eyebrow">MANUAL TWO-ACCOUNT TEST</div>
+            <h2 id="handoffAuthEndpoint"></h2>
+          </div>
+          <button type="button" data-close="handoffAuthDialog">Close</button>
+        </div>
+        <p>
+          Record ownership, expected permissions, and response contents. Status
+          codes alone do not prove a vulnerability.
+        </p>
+        <details>
+          <summary>Captured observations and ID parameters</summary>
+          <pre id="handoffAuthObservations"></pre>
+        </details>
+        <div class="reconFormGrid">
+          <label>Account A label<input id="authAccountA" /></label
+          ><label>Account B label<input id="authAccountB" /></label
+          ><label
+            >Account A result<textarea
+              id="authResultA"
+              rows="3"
+            ></textarea></label
+          ><label
+            >Account B result<textarea
+              id="authResultB"
+              rows="3"
+            ></textarea></label
+          ><label
+            >Expected account B access<select id="authExpected">
+              <option value="unknown">Unknown</option>
+              <option value="deny">Should be denied</option>
+              <option value="allow">Should be allowed</option>
+            </select></label
+          ><label
+            >Authentication required?<select id="authRequired">
+              <option value="unknown">Unknown</option>
+              <option value="yes">Yes — manually confirmed</option>
+              <option value="no">No — manually confirmed</option>
+            </select></label
+          >
+        </div>
+        <label
+          >Ownership / tenant boundary<textarea
+            id="authOwnership"
+            rows="2"
+          ></textarea>
+        </label>
+        <div id="authChecklist" class="authChecklist"></div>
+        <div class="reconFormGrid">
+          <label
+            >Review status<select id="authReviewStatus">
+              <option value="not_tested">Not tested</option>
+              <option value="in_progress">In progress</option>
+              <option value="reviewed">Reviewed — checklist complete</option>
+            </select></label
+          ><label
+            >Your conclusion<select id="authFlag">
+              <option value="not_tested">Not tested</option>
+              <option value="needs_review">Needs further review</option>
+              <option value="possible_idor">
+                Possible IDOR — manually observed
+              </option>
+              <option value="expected_access">Expected access behavior</option>
+              <option value="no_issue">No issue observed</option>
+            </select></label
+          >
+        </div>
+        <label
+          >Additional notes<textarea id="authNotes" rows="3"></textarea>
+        </label>
+        <p id="handoffAuthError" class="error"></p>
+        <div class="dialogButtons">
+          <button type="button" data-close="handoffAuthDialog">Cancel</button
+          ><button id="handoffAuthSave" class="primary">
+            Save review and update package
+          </button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="reconDialog" class="wideDialog">
+      <form id="reconForm">
+        <div class="eyebrow">NEW RECON RUN · NO AI / API KEY REQUIRED</div>
+        <h2>Define the target. Collect evidence.</h2>
+        <label
+          >Target URL or root domain<input
+            id="reconTarget"
+            placeholder="https://example.com"
+            required
+        /></label>
+        <div class="reconFormGrid">
+          <label class="checkbox"
+            ><input id="reconSubdomains" type="checkbox" /> Include discovered
+            subdomains in active scope</label
+          ><label
+            >Exclude hosts or URL fragments<textarea
+              id="reconExclude"
+              rows="2"
+              placeholder="One per line"
+            ></textarea>
+          </label>
+        </div>
+        <div class="moduleGrid" id="reconModules">
+          <label
+            ><input type="checkbox" value="browser" checked /> Browser evidence
+            <small>Snapshot current session traffic and scripts</small></label
+          ><label
+            ><input type="checkbox" value="dns" checked /> DNS records
+            <small>A, AAAA, CNAME, MX, TXT, NS, SOA, CAA</small></label
+          ><label
+            ><input type="checkbox" value="ct" checked /> Subdomain discovery
+            <small>Public certificate transparency</small></label
+          ><label
+            ><input type="checkbox" value="archives" checked /> Historical URLs
+            <small>Wayback + latest Common Crawl index</small></label
+          ><label
+            ><input type="checkbox" value="rdap" checked /> IP / ASN
+            registration
+            <small>RDAP + Team Cymru DNS; not scope proof</small></label
+          ><label
+            ><input type="checkbox" value="probe" checked /> Live hosts
+            <small>Status, titles, response headers</small></label
+          ><label
+            ><input type="checkbox" value="crawl" checked /> Crawl & JavaScript
+            <small>Links, scripts, endpoint strings, fingerprints</small></label
+          ><label
+            ><input type="checkbox" value="paths" checked /> Endpoint discovery
+            <small>GET requests from editable wordlist</small></label
+          ><label
+            ><input type="checkbox" value="graphql" /> GraphQL introspection
+            <small>Read-only schema query at /graphql</small></label
+          >
+        </div>
+        <label
+          >Browser capture to import<select id="reconSourceSession"></select
+        ></label>
+        <label
+          >Account role label for browser snapshot<input
+            id="reconRole"
+            value="unlabeled"
+            placeholder="e.g. member, admin, free-tier"
+        /></label>
+        <details>
+          <summary>Collection limits & endpoint wordlist</summary>
+          <div class="reconLimitGrid">
+            <label
+              >Target request budget<input
+                id="reconMaxRequests"
+                type="number"
+                min="1"
+                max="10000"
+                value="250" /></label
+            ><label
+              >Crawl URLs<input
+                id="reconMaxPages"
+                type="number"
+                min="1"
+                max="1000"
+                value="100" /></label
+            ><label
+              >Hosts to query<input
+                id="reconMaxHosts"
+                type="number"
+                min="1"
+                max="1000"
+                value="50" /></label
+            ><label
+              >Delay between target requests (ms)<input
+                id="reconDelay"
+                type="number"
+                min="50"
+                max="10000"
+                value="300" /></label
+            ><label
+              >Max response body (MiB)<input
+                id="reconMaxBody"
+                type="number"
+                min="1"
+                max="30"
+                value="5"
+            /></label>
+          </div>
+          <label
+            >Endpoint paths (one per line)<textarea id="reconPaths" rows="7">
+robots.txt
+sitemap.xml
+.well-known/security.txt
+swagger.json
+openapi.json
+openapi.yaml
+api-docs
+v3/api-docs
+swagger/
+docs/
+api/
+api/v1/
+api/v2/
+graphql
+health
+status
+login
+admin/</textarea></label
+          ><label
+            >Load your own path wordlist<input
+              id="reconWordlist"
+              type="file"
+              accept=".txt"
+          /></label>
+        </details>
+        <p class="workbenchNote">
+          Active modules send requests only to configured target hosts,
+          including scoped redirects. Third-party services are recorded without
+          being crawled. Providers may rate-limit or fail; each collector
+          reports its actual coverage. Forms are not submitted.
+        </p>
+        <p id="reconError" class="error"></p>
+        <div class="dialogButtons">
+          <button type="button" data-close="reconDialog">Cancel</button
+          ><button id="reconStart" class="primary">Start collection →</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="reconSourceDialog" class="wideDialog">
+      <form id="reconSourceForm">
+        <div class="eyebrow">WHITE-BOX INPUTS</div>
+        <h2>Bring your source into the picture.</h2>
+        <p>
+          Import a local source folder or clone a public HTTPS Git repository.
+          Code is read, not executed. No API key is needed.
+        </p>
+        <label
+          >Target URL for this source<input
+            id="sourceTarget"
+            required
+            placeholder="https://example.com" /></label
+        ><label
+          >Local folder or public HTTPS Git URL<input
+            id="sourceLocation"
+            required
+            placeholder="C:\projects\app or https://github.com/org/repo.git"
+        /></label>
+        <div class="reconLimitGrid">
+          <label
+            >Maximum files<input
+              id="sourceMaxFiles"
+              type="number"
+              min="1"
+              max="100000"
+              value="25000" /></label
+          ><label
+            >Total source limit (MiB)<input
+              id="sourceMaxMB"
+              type="number"
+              min="1"
+              max="2048"
+              value="300" /></label
+          ><label
+            >Per-file limit (MiB)<input
+              id="sourceMaxFileMB"
+              type="number"
+              min="1"
+              max="100"
+              value="20"
+          /></label>
+        </div>
+        <p class="workbenchNote">
+          Preserves imported source files and classifies dependency manifests,
+          configuration, schema/migrations, authorization code, routes, tests,
+          CI/CD, and Git history. Dependency/cache folders and symbolic links
+          are excluded. All exclusions and size limits appear in the inventory.
+          Source and history can contain real credentials and are stored
+          locally.
+        </p>
+        <p id="sourceError" class="error"></p>
+        <div class="dialogButtons">
+          <button type="button" data-close="reconSourceDialog">Cancel</button
+          ><button id="sourceStart" class="primary">Import source →</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="reconHarDialog">
+      <form id="reconHarForm">
+        <div class="eyebrow">BROWSER / MOBILE TRAFFIC</div>
+        <h2>Import a traffic capture.</h2>
+        <label
+          >Target URL<input
+            id="harTarget"
+            required
+            placeholder="https://example.com" /></label
+        ><label class="checkbox"
+          ><input id="harSubdomains" type="checkbox" /> Include target
+          subdomains</label
+        ><label
+          >Account role label<input id="harRole" value="unlabeled" /></label
+        ><label class="checkbox"
+          ><input id="harMobile" type="checkbox" /> This capture is from a
+          mobile app</label
+        ><label
+          >HAR file (up to 15 MiB)<input
+            id="harFile"
+            type="file"
+            accept=".har,.json"
+            required
+        /></label>
+        <p class="workbenchNote">
+          Only in-scope entries are imported. Bodies must be present in the HAR
+          to analyze them. Native mobile collection still requires your
+          device/proxy capture setup.
+        </p>
+        <p id="harError" class="error"></p>
+        <div class="dialogButtons">
+          <button type="button" data-close="reconHarDialog">Cancel</button
+          ><button id="harStart" class="primary">Import HAR →</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="reconDetailDialog" class="wideDialog">
+      <div class="editorTop">
+        <strong id="reconDetailTitle">Evidence</strong>
+        <div>
+          <button id="reconDownloadArtifact" hidden>Download original</button
+          ><button data-close="reconDetailDialog">Close</button>
+        </div>
+      </div>
+      <pre id="reconDetailMeta"></pre>
+      <label
+        >Find in attached content<input
+          id="reconDetailFind"
+          placeholder="Search this content…"
+      /></label>
+      <p id="reconPreviewNote" class="workbenchNote"></p>
+      <pre id="reconDetailBody"></pre>
+    </dialog>
+    <dialog id="reconRolesDialog" class="wideDialog">
+      <div class="editorTop">
+        <strong>Account-role observations</strong
+        ><button data-close="reconRolesDialog">Close</button>
+      </div>
+      <p>
+        Run browser snapshots or HAR imports with different role labels. Compare
+        status, size, and body hashes for matching methods and paths.
+        Differences or identical responses do not establish an authorization
+        bug.
+      </p>
+      <div id="reconRoleMatrix"></div>
+    </dialog>
+    <section id="inspector" hidden>
+      <div class="inspectorHead">
+        <strong>Request inspector</strong
+        ><button id="closeInspector" aria-label="Close inspector">✕</button>
+      </div>
+      <div id="detailSummary"></div>
+      <div class="detailTabs">
+        <button data-detail="request" class="active">Request</button
+        ><button data-detail="response">Response</button
+        ><button data-detail="source">Response body</button>
+      </div>
+      <div class="inspectorTools">
+        <input
+          id="detailSearch"
+          placeholder="Find in this panel…"
+          aria-label="Find in inspector"
+        /><button id="sendToRepeater">Send to Repeater</button
+        ><button id="copy">Copy</button><button id="download">↓ Body</button>
+      </div>
+      <pre id="detailContent"></pre>
+    </section>
+    <dialog id="launchDialog">
+      <form id="launchForm">
+        <div class="eyebrow">NEW CAPTURE</div>
+        <h2>Follow the traffic.</h2>
+        <p>
+          A separate browser profile keeps your capture organized.<br />All tabs
+          and popups in this browser are captured.
+        </p>
+        <label
+          >Session name<input
+            id="sessionName"
+            placeholder="e.g. Checkout investigation"
+            required
+            maxlength="120" /></label
+        ><label
+          >Starting URL<input
+            id="startUrl"
+            type="url"
+            placeholder="https://example.com"
+            required /></label
+        ><label
+          >Browser<select id="browser">
+            <option value="chromium">Bundled Chromium (recommended)</option>
+            <option value="chrome">Installed Google Chrome</option>
+          </select></label
+        >
+        <div id="launchError" class="error"></div>
+        <div class="dialogButtons">
+          <button type="button" id="cancelLaunch">Cancel</button
+          ><button class="primary" id="launchButton">Launch & capture ↗</button>
+        </div>
+      </form>
+    </dialog>
+    <div id="toast" role="status" hidden></div>
+  </body>
+</html>

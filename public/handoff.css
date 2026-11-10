@@ -1,0 +1,136 @@
+.handoffTabs {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin: 22px 0;
+}
+.handoffTabs button {
+  font-size: 11px;
+  padding: 9px 12px;
+}
+.handoffTabs button.active {
+  color: var(--mint);
+  border-color: #67814e;
+  background: #263329;
+}
+#handoffPreview {
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: #11181b;
+  white-space: pre-wrap;
+  max-height: 70vh;
+  line-height: 1.9;
+  font-size: 12px;
+  padding: 27px;
+  overflow: auto;
+}
+#handoffReadView .editorTop {
+  color: var(--muted);
+  font:
+    12px "IBM Plex Mono",
+    monospace;
+}
+.handoffTable th:first-child {
+  width: 46%;
+}
+.handoffTable th:nth-child(2) {
+  width: auto;
+}
+.handoffTable th:nth-child(3) {
+  width: 180px;
+}
+.handoffTable td {
+  font-size: 11px;
+}
+#handoffDetail {
+  max-height: 70vh;
+  font-size: 12px;
+}
+#handoffAuthObservations {
+  max-height: 230px;
+  font-size: 11px;
+  margin: 12px 0;
+}
+#handoffAuthEndpoint {
+  font-size: 18px;
+  overflow-wrap: anywhere;
+}
+#handoffAuthDialog details {
+  font-size: 12px;
+  margin: 15px 0;
+  color: var(--muted);
+}
+.authChecklist {
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 10px 16px;
+  margin: 20px 0;
+}
+.authChecklist label {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  margin: 13px 0;
+  font-size: 12px;
+}
+.authChecklist input {
+  width: auto;
+  margin: 0;
+  accent-color: var(--mint);
+}
+#handoffRunChoices {
+  max-height: 320px;
+  overflow: auto;
+}
+#handoffRunChoices label {
+  overflow-wrap: anywhere;
+}
+#handoffMetrics .reconStage {
+  flex: 1;
+  min-width: 130px;
+}
+#handoffBuildDialog summary {
+  cursor: pointer;
+}
+@media (max-width: 850px) {
+  .handoffTable th:nth-child(3) {
+    width: 120px;
+  }
+  .handoffTabs button {
+    padding: 8px;
+  }
+}
+.handoffBuildStatus {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px;
+  border: 1px solid #67814e;
+  border-radius: 8px;
+  background: #1d2a20;
+  margin-bottom: 18px;
+}
+.handoffBuildStatus > div {
+  flex: 1;
+  min-width: 0;
+}
+.handoffBuildStatus strong {
+  font-size: 13px;
+}
+.handoffBuildStatus small {
+  display: block;
+  color: var(--muted);
+  font:
+    10px Consolas,
+    monospace;
+  margin: 8px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.handoffBuildStatus progress {
+  width: 100%;
+  height: 7px;
+  accent-color: var(--mint);
+}

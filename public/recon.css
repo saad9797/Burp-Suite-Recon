@@ -1,0 +1,263 @@
+.reconRunBar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 15px 0;
+}
+.reconRunBar label {
+  margin: 0;
+  flex: 1;
+  min-width: 240px;
+  font:
+    10px "IBM Plex Mono",
+    monospace;
+}
+.reconRunBar label select {
+  width: 100%;
+  margin-top: 7px;
+}
+.reconRunBar > span:last-child {
+  font-size: 11px;
+  color: var(--muted);
+}
+.reconStages {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 18px 0;
+}
+.reconStage {
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 10px 12px;
+  max-width: 300px;
+  flex: 1;
+  min-width: 150px;
+  background: var(--panel);
+}
+.reconStage span {
+  display: block;
+  font-size: 11px;
+}
+.reconStage small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  margin-top: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.reconStage.complete span {
+  color: var(--mint);
+}
+.reconStage.partial span,
+.reconStage.failed span {
+  color: #ffbf69;
+}
+.reconStage.running span {
+  color: #91c8ef;
+}
+.reconLayout {
+  display: grid;
+  grid-template-columns: 215px minmax(0, 1fr);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--panel);
+}
+.reconResults {
+  padding: 18px;
+  min-width: 0;
+}
+.reconCategory {
+  display: flex;
+  justify-content: space-between;
+  gap: 5px;
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid #242c30;
+  background: transparent;
+  text-align: left;
+  font-size: 11px;
+  padding: 11px 14px;
+  border-radius: 0;
+  white-space: normal;
+}
+.reconCategory.active {
+  color: var(--mint);
+  background: #253029;
+  border-left: 2px solid var(--mint);
+}
+.reconCategory span {
+  color: var(--muted);
+  font:
+    10px "IBM Plex Mono",
+    monospace;
+}
+.reconTable {
+  max-height: 560px;
+}
+.reconTable th:first-child {
+  width: 150px;
+}
+.reconTable th:nth-child(2) {
+  width: auto;
+}
+.reconTable th:nth-child(3) {
+  width: 150px;
+}
+.reconResults .toolbar {
+  flex-wrap: wrap;
+}
+.reconResults .toolbar button,
+.reconResults .toolbar select {
+  font-size: 11px;
+  padding: 7px;
+}
+.reconResults .search {
+  min-width: 220px;
+}
+.reconLog {
+  margin-top: 22px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.reconLog summary {
+  cursor: pointer;
+}
+.reconLog pre {
+  max-height: 260px;
+  margin-top: 12px;
+  font-size: 11px;
+}
+.wideDialog {
+  width: min(900px, 90vw);
+  max-height: 90vh;
+  overflow: auto;
+}
+.wideDialog > p {
+  font-size: 12px;
+}
+.wideDialog form > details {
+  font-size: 12px;
+  margin-top: 20px;
+}
+.moduleGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+  margin: 18px 0;
+}
+.moduleGrid label {
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 12px;
+  margin: 0;
+  font-size: 12px;
+  color: var(--text);
+}
+.moduleGrid input,
+.checkbox input {
+  display: inline;
+  width: auto;
+  margin: 0 8px 0 0;
+  accent-color: var(--mint);
+}
+.moduleGrid small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  margin: 7px 0 0 23px;
+}
+.reconFormGrid,
+.reconLimitGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.reconFormGrid {
+  grid-template-columns: 1fr 1fr;
+}
+.reconFormGrid label {
+  margin: 8px 0;
+}
+.reconFormGrid .checkbox {
+  align-self: center;
+}
+.wideDialog .checkbox {
+  display: flex;
+  align-items: center;
+}
+.wideDialog .checkbox input {
+  flex-shrink: 0;
+}
+#reconDetailMeta {
+  max-height: 230px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  font-size: 11px;
+}
+#reconDetailBody {
+  max-height: 45vh;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  min-height: 100px;
+  font-size: 11px;
+}
+#reconDetailTitle {
+  overflow-wrap: anywhere;
+  max-width: 600px;
+  font-size: 13px;
+}
+#reconRoleMatrix {
+  overflow: auto;
+  margin-top: 20px;
+}
+#reconRoleMatrix table {
+  min-width: 600px;
+}
+#reconRoleMatrix th:first-child {
+  width: 40%;
+}
+#reconRoleMatrix th {
+  width: auto;
+}
+#reconRoleMatrix td {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  font-size: 10px;
+}
+@media (max-width: 1100px) {
+  .reconLayout {
+    grid-template-columns: 165px minmax(0, 1fr);
+  }
+  .reconTable th:first-child {
+    width: 110px;
+  }
+  .reconTable th:nth-child(3) {
+    width: 110px;
+  }
+  .workbenchHeader > div:last-child {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+}
+@media (max-width: 800px) {
+  .reconLayout {
+    grid-template-columns: 1fr;
+  }
+  .reconLayout .workbenchList {
+    max-height: 200px;
+    overflow: auto;
+  }
+  .moduleGrid,
+  .reconFormGrid {
+    grid-template-columns: 1fr;
+  }
+  .reconLimitGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
